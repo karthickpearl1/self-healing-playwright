@@ -1,0 +1,85 @@
+<!doctype html>
+<!-- v1: the release the tests were written against. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Acme Mutual - Make a claim</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 560px; margin: 2rem auto; color: #1f2933; }
+      [hidden] { display: none !important; }
+      .field { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+      input, select, textarea { padding: 0.5rem; font: inherit; }
+      .btn { padding: 0.6rem 1.2rem; font: inherit; border: 0; border-radius: 4px; cursor: pointer; }
+      .btn-primary { background: #0b5394; color: white; }
+      .btn-secondary { background: #e4e7eb; }
+      .error { color: #b00020; }
+      .success { background: #e3f9e5; padding: 1rem; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <h1>Make a claim</h1>
+    <form id="claimForm" novalidate>
+      <div class="field">
+        <label for="policyNumber">Policy number</label>
+        <input id="policyNumber" name="policyNumber" data-testid="policy-number" placeholder="e.g. AM-123456" />
+      </div>
+      <div class="field">
+        <label for="claimType">Type of claim</label>
+        <select id="claimType" name="claimType" data-testid="claim-type">
+          <option value="">Choose one</option>
+          <option value="escape-of-water">Escape of water</option>
+          <option value="storm">Storm damage</option>
+          <option value="theft">Theft</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="incidentDate">Date of incident</label>
+        <input id="incidentDate" name="incidentDate" type="date" data-testid="incident-date" />
+      </div>
+      <div class="field">
+        <label for="description">What happened?</label>
+        <textarea id="description" name="description" data-testid="description" rows="4"></textarea>
+      </div>
+      <fieldset class="field">
+        <legend>How should we contact you?</legend>
+        <label><input type="radio" name="contact" value="email" checked /> Email</label>
+        <label><input type="radio" id="contactPhone" name="contact" value="phone" /> Phone</label>
+      </fieldset>
+      <div class="field" id="phoneField" hidden>
+        <label for="phoneNumber">Phone number</label>
+        <input id="phoneNumber" name="phoneNumber" type="tel" data-testid="phone-number" />
+      </div>
+      <p id="formError" class="error" role="alert"></p>
+      <button type="button" id="saveDraft" class="btn btn-secondary">Save draft</button>
+      <button type="submit" id="submitClaim" class="btn btn-primary" data-testid="submit-claim">Submit claim</button>
+    </form>
+    <div id="confirmation" class="success" role="status" hidden></div>
+
+    <script>
+      const form = document.getElementById('claimForm');
+      const error = document.getElementById('formError');
+
+      // Show the phone number box only when "Phone" is chosen.
+      form.addEventListener('change', () => {
+        document.getElementById('phoneField').hidden = form.contact.value !== 'phone';
+      });
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!form.policyNumber.value.trim()) {
+          error.textContent = 'Please enter your policy number.';
+          return;
+        }
+        if (!form.claimType.value) {
+          error.textContent = 'Please choose the type of claim.';
+          return;
+        }
+        error.textContent = '';
+        form.hidden = true;
+        const confirmation = document.getElementById('confirmation');
+        confirmation.textContent = 'Claim submitted. Your reference is CLM-' + form.policyNumber.value.slice(-4) + '.';
+        confirmation.hidden = false;
+      });
+    </script>
+  </body>
+</html>

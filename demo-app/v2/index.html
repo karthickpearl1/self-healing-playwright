@@ -1,0 +1,95 @@
+<!doctype html>
+<!-- v2: a "redesign" release. Same behaviour as v1, but ids, classes, labels, button text
+     and layout have changed, so locators written against v1 break. Diff it against v1. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Acme Mutual - Start your claim</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 600px; margin: 2rem auto; color: #102a43; }
+      [hidden] { display: none !important; }
+      .form-row { margin-bottom: 1.2rem; display: grid; gap: 0.3rem; }
+      input, select, textarea { padding: 0.6rem; font: inherit; border: 1px solid #9fb3c8; border-radius: 6px; }
+      .actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+      .button { padding: 0.7rem 1.4rem; font: inherit; border: 0; border-radius: 999px; cursor: pointer; }
+      .button--primary { background: #127fbf; color: white; }
+      .button--ghost { background: transparent; border: 1px solid #127fbf; color: #127fbf; }
+      .notice--error { color: #b00020; }
+      .notice--success { background: #e3f9e5; padding: 1rem; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1>Start your claim</h1>
+    <form id="claim-form" novalidate>
+      <div class="form-row">
+        <!-- id, name and label changed. data-testid kept. -->
+        <label for="policy-ref">Policy reference</label>
+        <input id="policy-ref" name="policyRef" data-testid="policy-number" placeholder="e.g. AM-123456" />
+      </div>
+      <div class="form-row">
+        <!-- id and test id changed. Label kept. -->
+        <label for="claim-category">Type of claim</label>
+        <select id="claim-category" name="claimType">
+          <option value="">Select</option>
+          <option value="escape-of-water">Escape of water</option>
+          <option value="storm">Storm damage</option>
+          <option value="theft">Theft</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <!-- id restyled from camelCase to kebab-case, test id removed. Label, name and type kept. -->
+        <label for="incident-date">Date of incident</label>
+        <input id="incident-date" name="incidentDate" type="date" />
+      </div>
+      <div class="form-row">
+        <!-- id, label and test id changed. name kept. -->
+        <label for="claim-details">Tell us what happened</label>
+        <textarea id="claim-details" name="description" rows="5"></textarea>
+      </div>
+      <fieldset class="form-row">
+        <legend>Contact preference</legend>
+        <label><input type="radio" name="contact" value="email" checked /> Email</label>
+        <!-- id changed. Label text kept. -->
+        <label><input type="radio" id="contact-by-phone" name="contact" value="phone" /> Phone</label>
+      </fieldset>
+      <div class="form-row" id="phone-row" hidden>
+        <!-- id restyled to kebab-case, label changed, test id removed. name and type kept. -->
+        <label for="phone-number">Mobile number</label>
+        <input id="phone-number" name="phoneNumber" type="tel" />
+      </div>
+      <p id="form-errors" class="notice--error" role="alert"></p>
+      <div class="actions">
+        <!-- Buttons swapped round. Submit button: new id, class and text, test id removed. -->
+        <button type="submit" id="send-claim" class="button button--primary">Send claim</button>
+        <button type="button" id="save-for-later" class="button button--ghost">Save for later</button>
+      </div>
+    </form>
+    <div id="claim-confirmation" class="notice--success" role="status" hidden></div>
+
+    <script>
+      const form = document.getElementById('claim-form');
+      const error = document.getElementById('form-errors');
+
+      form.addEventListener('change', () => {
+        document.getElementById('phone-row').hidden = form.contact.value !== 'phone';
+      });
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!form.policyRef.value.trim()) {
+          error.textContent = 'Please enter your policy number.';
+          return;
+        }
+        if (!form.claimType.value) {
+          error.textContent = 'Please choose the type of claim.';
+          return;
+        }
+        error.textContent = '';
+        form.hidden = true;
+        const confirmation = document.getElementById('claim-confirmation');
+        confirmation.textContent = 'Thanks, we have your claim. Your reference is CLM-' + form.policyRef.value.slice(-4) + '.';
+        confirmation.hidden = false;
+      });
+    </script>
+  </body>
+</html>

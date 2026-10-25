@@ -1,0 +1,8 @@
+node_modules
+healing-report
+test-results
+playwright-report
+package-lock.json
+docs/demo.cast
+# The demo pages are kept hand-formatted so `diff demo-app/v1 demo-app/v2` reads cleanly.
+demo-app/*/index.html

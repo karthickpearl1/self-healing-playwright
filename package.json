@@ -1,0 +1,37 @@
+{
+  "name": "self-healing-playwright",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-healing locators for Playwright with guardrails: ranked fallbacks, element fingerprints, an optional LLM step, confidence gates and a healing report for human review.",
+  "license": "MIT",
+  "author": "Karthick Sivagnanam",
+  "repository": "github:karthickpearl1/self-healing-playwright",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "app": "node demo-app/server.mjs",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "playwright test --project=unit",
+    "test:v1": "node scripts/scenario.mjs v1 heal",
+    "test:v1:strict": "node scripts/scenario.mjs v1 strict",
+    "test:v2:naive": "node scripts/scenario.mjs v2 off",
+    "test:v2": "node scripts/scenario.mjs v2 heal",
+    "test:v2:strict": "node scripts/scenario.mjs v2 strict",
+    "test:v2-bug": "node scripts/scenario.mjs v2-bug heal",
+    "fingerprints": "node scripts/scenario.mjs v1 heal --update-fingerprints",
+    "verify": "node scripts/verify.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
+    "eslint": "10.13.0",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0"
+  }
+}

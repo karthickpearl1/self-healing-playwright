@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: ESLint and Prettier
+        run: npm run lint
+      - name: TypeScript type check
+        run: npm run typecheck
+
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HEAL_LLM: mock # offline and deterministic, no API keys in CI
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Unit tests (scoring, LLM parsing, patches, report)
+        run: npm run test:unit
+
+      # The policy a real pipeline would enforce: on the app the tests were written for,
+      # strict mode fails if any locator needed healing.
+      - name: Strict gate on the current app (v1)
+        run: npm run test:v1:strict
+
+      # The self-test: v2 naive fails, v2 heals and passes, v2 strict is flagged,
+      # and the genuine bugs in v2-bug are not masked. Each run adds its report to the job summary.
+      - name: Healing scenarios self-test
+        run: npm run verify
+
+      - name: Upload healing reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: healing-report
+          path: healing-report/
+          if-no-files-found: error
+
+      - name: Upload Playwright traces of failed tests
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,0 +1,67 @@
+# Manual run of the v2 healing suite with a real LLM in the healing step instead of the mock.
+# Needs repository secrets (and variables) for the chosen provider. See the README.
+name: Real LLM healing run
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: LLM provider for the healing step
+        type: choice
+        options: [openai, azure, bedrock]
+        default: openai
+      variant:
+        description: Demo app version
+        type: choice
+        options: [v2, v2-bug]
+        default: v2
+
+permissions:
+  contents: read
+  id-token: write # only used by the Bedrock path (AWS OIDC role)
+
+jobs:
+  heal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HEAL_LLM: ${{ inputs.provider }}
+      HEAL_LLM_MODEL: ${{ vars.HEAL_LLM_MODEL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
+      BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: AWS credentials (Bedrock only)
+        if: ${{ inputs.provider == 'bedrock' }}
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-west-2' }}
+      - name: AWS SDK (Bedrock only)
+        if: ${{ inputs.provider == 'bedrock' }}
+        run: npm install --no-save @aws-sdk/client-bedrock-runtime
+
+      # HEAL_FINGERPRINTS=off skips fingerprint matching, so every element the fallbacks
+      # cannot find goes to the LLM. That is the point of this run.
+      - name: Run the healing suite
+        env:
+          HEAL_FINGERPRINTS: 'off'
+          VARIANT: ${{ inputs.variant }}
+        run: node scripts/scenario.mjs "$VARIANT" heal
+
+      - name: Upload healing report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: healing-report-${{ inputs.provider }}-${{ inputs.variant }}
+          path: healing-report/
